@@ -15,7 +15,9 @@
         <button (click)="addTicket()" class="bg-cyan-500 rounded-sm"> Add Ticket</button>
     </div>
 
-    @for (ticket of tickets(); track ticket.title) {
+    @for (ticket of tickets(); track ticket.id) {
     <app-ticket [content]="ticket"></app-ticket>
+    } @empty {
+    <h2>No open tickets 🎉</h2>
     }
 </main>
