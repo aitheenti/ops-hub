@@ -1,21 +1,21 @@
 <main>
     <h1>{{title}}</h1>
-    <p> Open Tickets: {{openTickets() }}</p>
-    <p> Resolved Tickets: {{resolvedTickets()}}</p>
-    @if(hasOpenTickets()) {
+    <p> Open Tickets: {{ticketService.openTickets() }}</p>
+    <p> Resolved Tickets: {{ticketService.resolvedTickets()}}</p>
+    @if(ticketService.hasOpenTickets()) {
     <p> You have tickets that need attention.</p>
     } @else {
     <p>All Clear!</p>
     }
 
-    <p>Today's Workload : <span class="text-amber-600">{{workloadStatus()}}</span></p>
+    <p>Today's Workload : <span class="text-amber-600">{{ticketService.workloadStatus()}}</span></p>
 
     <div class="flex gap-16">
-        <button (click)="resolveTicket()" class="bg-emerald-100 rounded-sm">Resolve Ticket</button>
-        <button (click)="addTicket()" class="bg-cyan-500 rounded-sm"> Add Ticket</button>
+        <button (click)="ticketService.resolveTicket()" class="bg-emerald-100 rounded-sm">Resolve Ticket</button>
+        <button (click)="ticketService.addTicket()" class="bg-cyan-500 rounded-sm"> Add Ticket</button>
     </div>
 
-    @for (ticket of tickets(); track ticket.id) {
+    @for (ticket of ticketService.tickets(); track ticket.id) {
     <app-ticket [content]="ticket"></app-ticket>
     } @empty {
     <h2>No open tickets 🎉</h2>
