@@ -1,9 +1,10 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { Dashboard } from './dashboard';
+import { TicketService } from '../app/services/ticket-service';
 import { TicketContent } from '../app/models/TicketContent.interface';
 
-// Small helper so each test can build exactly the tickets it needs.
 function makeTickets(open: number, resolved: number): TicketContent[] {
   const tickets: TicketContent[] = [];
   for (let i = 0; i < open; i++) {
@@ -20,18 +21,36 @@ function makeTickets(open: number, resolved: number): TicketContent[] {
   return tickets;
 }
 
+// A stand-in for TicketService. Its values are plain writable signals, so each
+// test can put the dashboard into any state, and its methods are spies, so
+// tests can check that the buttons call them.
+function createFakeTicketService() {
+  return {
+    tickets: signal<TicketContent[]>(makeTickets(3, 0)),
+    openTickets: signal(3),
+    resolvedTickets: signal(0),
+    hasOpenTickets: signal(true),
+    workloadStatus: signal('Normal'),
+    resolveTicket: vi.fn(),
+    addTicket: vi.fn(),
+  };
+}
+
 describe('Dashboard', () => {
-  let component: Dashboard;
   let fixture: ComponentFixture<Dashboard>;
   let el: HTMLElement;
+  let fakeService: ReturnType<typeof createFakeTicketService>;
 
   beforeEach(async () => {
+    fakeService = createFakeTicketService();
+
     await TestBed.configureTestingModule({
       imports: [Dashboard],
+      // When Dashboard calls inject(TicketService), give it the fake instead.
+      providers: [{ provide: TicketService, useValue: fakeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Dashboard);
-    component = fixture.componentInstance;
     el = fixture.nativeElement;
     await fixture.whenStable();
   });
@@ -43,126 +62,87 @@ describe('Dashboard', () => {
   }
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  describe('counts', () => {
-    it('starts with all mock tickets open and none resolved', () => {
-      expect(component.openTickets()).toBe(3);
-      expect(component.resolvedTickets()).toBe(0);
-      expect(component.hasOpenTickets()).toBe(true);
-    });
+  it('shows the title and the counts from the service', async () => {
+    fakeService.openTickets.set(4);
+    fakeService.resolvedTickets.set(2);
+    const text = await render();
 
-    it('derives the counts from the tickets list', () => {
-      component.tickets.set(makeTickets(2, 5));
-
-      expect(component.openTickets()).toBe(2);
-      expect(component.resolvedTickets()).toBe(5);
-    });
+    expect(text).toContain('OpsHub Dashboard');
+    expect(text).toContain('Open Tickets: 4');
+    expect(text).toContain('Resolved Tickets: 2');
   });
 
-  describe('workloadStatus', () => {
-    it('is "Empty" when there are no open tickets', () => {
-      component.tickets.set(makeTickets(0, 3));
-      expect(component.workloadStatus()).toBe('Empty');
-    });
+  it('shows the workload status from the service', async () => {
+    fakeService.workloadStatus.set('Busy');
+    const text = await render();
 
-    it('is "Normal" with 1 to 7 open tickets', () => {
-      component.tickets.set(makeTickets(1, 0));
-      expect(component.workloadStatus()).toBe('Normal');
-
-      component.tickets.set(makeTickets(7, 0));
-      expect(component.workloadStatus()).toBe('Normal');
-    });
-
-    it('is "Busy" with more than 8 open tickets', () => {
-      component.tickets.set(makeTickets(7, 0));
-      expect(component.workloadStatus()).toBe('Normal');
-    });
+    expect(text).toContain("Today's Workload : Busy");
   });
 
-  describe('resolveTicket()', () => {
-    it('resolves the first open ticket only', () => {
-      component.tickets.set(makeTickets(2, 0));
+  it('asks for attention while there are open tickets', async () => {
+    const text = await render();
 
-      component.resolveTicket();
-
-      expect(component.tickets()[0].status).toBe('resolved');
-      expect(component.tickets()[1].status).toBe('open');
-      expect(component.openTickets()).toBe(1);
-      expect(component.resolvedTickets()).toBe(1);
-    });
-
-    it('does nothing when there are no open tickets', () => {
-      const tickets = makeTickets(0, 2);
-      component.tickets.set(tickets);
-
-      component.resolveTicket();
-
-      expect(component.tickets()).toBe(tickets);
-    });
+    expect(text).toContain('You have tickets that need attention.');
+    expect(text).not.toContain('All Clear!');
   });
 
-  describe('addTicket()', () => {
-    it('adds a new open ticket with a unique id', () => {
-      const before = component.tickets().length;
+  it('shows "All Clear!" when there are no open tickets', async () => {
+    fakeService.hasOpenTickets.set(false);
+    const text = await render();
 
-      component.addTicket();
-      component.addTicket();
-
-      const tickets = component.tickets();
-      expect(tickets.length).toBe(before + 2);
-      expect(tickets.at(-1)?.status).toBe('open');
-      expect(tickets.at(-1)?.id).not.toBe(tickets.at(-2)?.id);
-    });
+    expect(text).toContain('All Clear!');
+    expect(text).not.toContain('need attention');
   });
 
-  describe('template', () => {
-    it('shows the title and counts', async () => {
-      const text = await render();
+  it('renders one <app-ticket> per ticket', async () => {
+    fakeService.tickets.set(makeTickets(2, 3));
+    await render();
 
-      expect(text).toContain('OpsHub Dashboard');
-      expect(text).toContain('Open Tickets: 3');
-      expect(text).toContain('Resolved Tickets: 0');
-    });
+    expect(el.querySelectorAll('app-ticket').length).toBe(5);
+  });
 
-    it('renders one <app-ticket> per ticket', async () => {
-      await render();
-      expect(el.querySelectorAll('app-ticket').length).toBe(3);
-    });
+  it('shows the empty message when there are no tickets', async () => {
+    fakeService.tickets.set([]);
+    const text = await render();
 
-    it('updates the page when the Resolve button is clicked', async () => {
-      const resolveButton = el.querySelectorAll('button')[0];
+    expect(text).toContain('No open tickets');
+    expect(el.querySelectorAll('app-ticket').length).toBe(0);
+  });
 
-      resolveButton.click();
-      const text = await render();
+  it('calls resolveTicket() when the Resolve button is clicked', () => {
+    el.querySelectorAll('button')[0].click();
 
-      expect(text).toContain('Open Tickets: 2');
-      expect(text).toContain('Resolved Tickets: 1');
-    });
+    expect(fakeService.resolveTicket).toHaveBeenCalledTimes(1);
+    expect(fakeService.addTicket).not.toHaveBeenCalled();
+  });
 
-    it('adds a ticket to the page when the Add button is clicked', async () => {
-      const addButton = el.querySelectorAll('button')[1];
+  it('calls addTicket() when the Add button is clicked', () => {
+    el.querySelectorAll('button')[1].click();
 
-      addButton.click();
-      await render();
+    expect(fakeService.addTicket).toHaveBeenCalledTimes(1);
+    expect(fakeService.resolveTicket).not.toHaveBeenCalled();
+  });
+});
 
-      expect(el.querySelectorAll('app-ticket').length).toBe(4);
-    });
+// One end-to-end check with the real service, to make sure the pieces work together.
+describe('Dashboard with the real TicketService', () => {
+  it('updates the page when tickets are resolved and added', async () => {
+    await TestBed.configureTestingModule({ imports: [Dashboard] }).compileComponents();
+    const fixture = TestBed.createComponent(Dashboard);
+    const el: HTMLElement = fixture.nativeElement;
+    await fixture.whenStable();
 
-    it('shows "All Clear!" and "Empty" once every ticket is resolved', async () => {
-      component.tickets.set(makeTickets(0, 3));
-      const text = await render();
+    const [resolveButton, addButton] = Array.from(el.querySelectorAll('button'));
 
-      expect(text).toContain('All Clear!');
-      expect(text).toContain('Empty');
-    });
+    resolveButton.click();
+    addButton.click();
+    await fixture.whenStable();
 
-    it('shows the empty message when there are no tickets at all', async () => {
-      component.tickets.set([]);
-      const text = await render();
-
-      expect(text).toContain('No open tickets');
-    });
+    expect(el.textContent).toContain('Open Tickets: 3');
+    expect(el.textContent).toContain('Resolved Tickets: 1');
+    expect(el.querySelectorAll('app-ticket').length).toBe(4);
   });
 });
