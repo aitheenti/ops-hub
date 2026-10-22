@@ -16,7 +16,9 @@
     </div>
 
     @for (ticket of ticketService.tickets(); track ticket.id) {
-    <app-ticket [content]="ticket"></app-ticket>
+    <a [routerLink]="['/tickets', ticket.id]">
+        <app-ticket [content]="ticket"></app-ticket>
+    </a>
     } @empty {
     <h2>No open tickets 🎉</h2>
     }

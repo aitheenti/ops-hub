@@ -6,7 +6,7 @@ import { TicketMock } from '../mocks/Ticket.mock';
   providedIn: 'root',
 })
 export class TicketService {
-  private ticketState = signal<TicketContent[]>(TicketMock);
+  private readonly ticketState = signal<TicketContent[]>(TicketMock);
   readonly tickets = this.ticketState.asReadonly();
   openTicketsList = computed(() => this.tickets().filter((ticket) => ticket.status === 'open'));
   openTickets = computed(() => this.openTicketsList().length);
@@ -23,7 +23,7 @@ export class TicketService {
     () => this.tickets().filter((ticket) => ticket.status === 'resolved').length,
   );
 
-  public resolveTicket() {
+  public resolveTicket(): void {
     const firstOpenTicket = this.tickets().find((ticket) => ticket.status === 'open');
     if (!firstOpenTicket) return;
 
@@ -34,7 +34,7 @@ export class TicketService {
     );
   }
 
-  addTicket() {
+  addTicket(): void {
     this.ticketState.update((tickets) => [
       ...tickets,
       {

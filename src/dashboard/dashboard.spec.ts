@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { Dashboard } from './dashboard';
 import { TicketService } from '../app/services/ticket-service';
@@ -46,8 +47,12 @@ describe('Dashboard', () => {
 
     await TestBed.configureTestingModule({
       imports: [Dashboard],
-      // When Dashboard calls inject(TicketService), give it the fake instead.
-      providers: [{ provide: TicketService, useValue: fakeService }],
+      providers: [
+        // When Dashboard calls inject(TicketService), give it the fake instead.
+        { provide: TicketService, useValue: fakeService },
+        // routerLink needs a router to exist; an empty route list is enough here.
+        provideRouter([]),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Dashboard);
@@ -112,6 +117,14 @@ describe('Dashboard', () => {
     expect(el.querySelectorAll('app-ticket').length).toBe(0);
   });
 
+  it('links each ticket to its details page', async () => {
+    fakeService.tickets.set(makeTickets(1, 1));
+    await render();
+
+    const hrefs = Array.from(el.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    expect(hrefs).toEqual(['/tickets/open-0', '/tickets/resolved-0']);
+  });
+
   it('calls resolveTicket() when the Resolve button is clicked', () => {
     el.querySelectorAll('button')[0].click();
 
@@ -130,7 +143,10 @@ describe('Dashboard', () => {
 // One end-to-end check with the real service, to make sure the pieces work together.
 describe('Dashboard with the real TicketService', () => {
   it('updates the page when tickets are resolved and added', async () => {
-    await TestBed.configureTestingModule({ imports: [Dashboard] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [Dashboard],
+      providers: [provideRouter([])],
+    }).compileComponents();
     const fixture = TestBed.createComponent(Dashboard);
     const el: HTMLElement = fixture.nativeElement;
     await fixture.whenStable();
