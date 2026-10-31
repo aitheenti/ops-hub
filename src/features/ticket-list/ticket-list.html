@@ -1,1 +1,21 @@
-<p>ticket-list works!</p>
+<main>
+    <h1>Tickets</h1>
+  
+    <p>Open tickets: {{ ticketService.openTickets() }}</p>
+@for(ticket of ticketService.tickets(); track ticket.id) {
+    <article class="my-3 rounded-lg border p-4">
+        <h2>{{ ticket.title }}</h2>
+        <p>{{ ticket.description }}</p>
+        <p>Status: {{ ticket.status }}</p>
+  
+        <a
+          [routerLink]="['/tickets', ticket.id]"
+          class="text-sky-700 underline"
+        >
+          View details
+        </a>
+      </article>
+    } @empty {
+      <p>No tickets yet.</p>
+    }
+</main>

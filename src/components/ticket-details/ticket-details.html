@@ -1,1 +1,15 @@
-<p>ticket-details works!</p>
+<main>
+    <a routerLink="/tickets" class="text-sky-700 underline">
+      ← Back to tickets
+    </a>
+  
+    @if (ticket(); as currentTicket) {
+      <h1 class="mt-4 text-2xl">{{ currentTicket.title }}</h1>
+      <p>{{ currentTicket.description }}</p>
+      <p>Status: {{ currentTicket.status }}</p>
+      <p>Ticket ID: {{ currentTicket.id }}</p>
+    } @else {
+      <h1 class="mt-4 text-2xl">Ticket not found</h1>
+      <p>No ticket exists with ID "{{ ticketId() }}".</p>
+    }
+  </main>

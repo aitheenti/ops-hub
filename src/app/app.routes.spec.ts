@@ -27,10 +27,18 @@ describe('app routes', () => {
   });
 
   it('loads TicketDetails at /tickets/:id with that id', async () => {
-    const page = await harness.navigateByUrl('/tickets/42', TicketDetails);
-
+    const page = await harness.navigateByUrl('/tickets/1', TicketDetails);
+  
     expect(page).toBeInstanceOf(TicketDetails);
-    expect(page.activatedRoute.snapshot.paramMap.get('id')).toBe('42');
+    expect(page.ticketId()).toBe('1');
+    expect(page.ticket()?.title).toBe('Setup pipelines');
+  });
+
+  it('returns no ticket for an unknown ticket ID', async () => {
+    const page = await harness.navigateByUrl('/tickets/999', TicketDetails);
+  
+    expect(page.ticketId()).toBe('999');
+    expect(page.ticket()).toBeUndefined();
   });
 
   it('redirects unknown URLs to the Dashboard', async () => {
