@@ -15,11 +15,5 @@
         <button (click)="ticketService.addTicket()" class="bg-cyan-500 rounded-sm"> Add Ticket</button>
     </div>
 
-    @for (ticket of ticketService.tickets(); track ticket.id) {
-    <a [routerLink]="['/tickets', ticket.id]">
-        <app-ticket [content]="ticket"></app-ticket>
-    </a>
-    } @empty {
-    <h2>No open tickets 🎉</h2>
-    }
+    <app-ticket-list></app-ticket-list>
 </main>
