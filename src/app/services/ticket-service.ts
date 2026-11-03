@@ -1,13 +1,20 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { TicketContent } from '../models/TicketContent.interface';
 import { TicketMock } from '../mocks/Ticket.mock';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TicketService {
+  private readonly http = inject(HttpClient);
   private readonly ticketState = signal<TicketContent[]>(TicketMock);
   readonly tickets = this.ticketState.asReadonly();
+
+  getTicketById(id:string): Observable<TicketContent> {
+    return this.http.get<TicketContent>(`/api/tickets/${id}`);
+  }
   openTicketsList = computed(() => this.tickets().filter((ticket) => ticket.status === 'open'));
   openTickets = computed(() => this.openTicketsList().length);
   hasOpenTickets = computed(() => this.openTickets() > 0);

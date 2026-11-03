@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth-guard';
+import { ticketResolver } from './resolvers/ticket-resolver';
 
 export const routes: Routes = [
   {
@@ -12,7 +13,9 @@ export const routes: Routes = [
   },
   {
     path: 'tickets/:id',
-    canActivate: [authGuard],
+    resolve: {
+      ticket: ticketResolver
+    },
     loadComponent: () =>
       import('../components/ticket-details/ticket-details').then((m) => m.TicketDetails),
   },

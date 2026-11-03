@@ -1,0 +1,22 @@
+{
+  "tickets": [
+    {
+      "id": "1",
+      "title": "Login page not loading",
+      "description": "Users are unable to access the login page.",
+      "status": "open"
+    },
+    {
+      "id": "2",
+      "title": "Dashboard performance issue",
+      "description": "Dashboard takes too long to load.",
+      "status": "in-progress"
+    },
+    {
+      "id": "3",
+      "title": "Fix navigation issue",
+      "description": "Navigation menu does not work on mobile.",
+      "status": "resolved"
+    }
+  ]
+}

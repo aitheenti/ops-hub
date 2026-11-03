@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TicketService } from '../../app/services/ticket-service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
+import { TicketContent } from '../../app/models/TicketContent.interface';
 
 @Component({
   selector: 'app-ticket-details',
@@ -12,8 +13,7 @@ import { map } from 'rxjs';
 })
 export class TicketDetails {
   private readonly route = inject(ActivatedRoute);
-  private ticketService = inject(TicketService);
 
-  readonly ticketId = toSignal(this.route.paramMap.pipe(map((params) => params.get('id'))));
-  readonly ticket = computed(() => this.ticketService.tickets().find((ticket) => ticket.id === this.ticketId()));
+  readonly ticket = toSignal(this.route.data.pipe(map(data => data['ticket'] as TicketContent | undefined)),
+    { initialValue: undefined})
 }
